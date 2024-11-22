@@ -19,7 +19,7 @@ public class CameraScreen extends Screen{
     private HomeScreen homeScreenProp;
 
     public CameraScreen(int posX, int posY, HomeScreen homeScreen){
-        super("Tela de Câmera", 640, 480);
+        super("Tela de Câmera", 640 + 13, 480 + 35);
 
         setHomeScreenProp(homeScreen);
 

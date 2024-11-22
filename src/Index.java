@@ -7,6 +7,7 @@ import org.opencv.core.Core;
 import Alert.UserAlert;
 import Screen.CameraScreen;
 import Screen.HomeScreen;
+import java.awt.Window;
 
 public class Index {
    
@@ -14,11 +15,15 @@ public class Index {
       try{
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
+        HomeScreen homeScreen;
+        CameraScreen cameraScreen;
+
         // Tela Inicial
-        HomeScreen homeScreen = new HomeScreen();
+        homeScreen = new HomeScreen();
 
         // Adição da Câmera
-        CameraScreen cameraScreen = new CameraScreen(440, 20, homeScreen);
+        cameraScreen = new CameraScreen(440, 20, homeScreen);
+
         cameraScreen.startCamera();
       }catch(Exception e){
         UserAlert userAlert = new UserAlert("ERRO - Erro ao criar tela inicial"); 

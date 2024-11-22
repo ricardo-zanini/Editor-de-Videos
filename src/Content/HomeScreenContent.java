@@ -2,7 +2,6 @@ package Content;
 
 import Alert.UserAlert;
 import Input.*;
-import Screen.CameraScreen;
 import Util.*;
 import java.awt.*;
 import java.io.File;
@@ -30,6 +29,20 @@ public class HomeScreenContent extends JPanel{
     private JButton         buttonCanny;
 
     private JButton         buttonGray;
+
+    private JButton         buttonNegative;
+
+    private JButton         buttonResize;
+
+    private JButton         buttonFlipV;
+    private boolean         flipedV;
+
+    private JButton         buttonFlipH;
+    private boolean         flipedH;
+
+
+    private JLabel                  labelFileSelector;
+    private FileSelector      fileSelector;
 
     private String          videoChange;
 
@@ -66,6 +79,16 @@ public class HomeScreenContent extends JPanel{
 
         setButtonGray(new JButton("TONS DE CINZA"));
 
+        setButtonNegative(new JButton("NEGATIVA"));
+
+        setButtonResize(new JButton("REDIMENCIONAR"));
+
+        setButtonFlipV(new JButton("ESPELHAMENTO VERTICAL"));
+        setButtonFlipH(new JButton("ESPELHAMENTO HORIZONTAL"));
+
+
+        setLabelFileSelector(new JLabel("- SALVAR VIDEO -"));
+        setFileSelector(new FileSelector(205, new FileNameExtensionFilter("Vídeos", "avi"), "SALVAR"));   
     }
 
     private void configComponents(){
@@ -74,32 +97,46 @@ public class HomeScreenContent extends JPanel{
             Font font = Font.createFont(Font.TRUETYPE_FONT, fontStyle);
     
             buttonClean.setFont(font.deriveFont(16f));
-            buttonClean.addActionListener(event -> eventActionSelected(""));
 
             sliderGaussian.setFont(font.deriveFont(16f));
             buttonGaussian.setFont(font.deriveFont(16f));
-            buttonGaussian.addActionListener(event -> eventActionSelected("gaussian"));
 
             fieldBrightness.setFont(font.deriveFont(16f));
             buttonBrightness.setFont(font.deriveFont(16f));
-            buttonBrightness.addActionListener(event -> eventActionSelected("brightness"));
 
             fieldContrast.setFont(font.deriveFont(16f));
             buttonContrast.setFont(font.deriveFont(16f));
-            buttonContrast.addActionListener(event -> eventActionSelected("contrast"));
 
             buttonSobel.setFont(font.deriveFont(16f));
-            buttonSobel.addActionListener(event -> eventActionSelected("sobel"));
 
             buttonCanny.setFont(font.deriveFont(16f));
-            buttonCanny.addActionListener(event -> eventActionSelected("canny"));
 
             buttonGray.setFont(font.deriveFont(16f));
-            buttonGray.addActionListener(event -> eventActionSelected("gray"));
+
+            buttonNegative.setFont(font.deriveFont(16f));
+
+            buttonResize.setFont(font.deriveFont(16f));
+
+            buttonFlipV.setFont(font.deriveFont(16f));
+            buttonFlipH.setFont(font.deriveFont(16f));
+
+            labelFileSelector.setFont(font.deriveFont(16f));
 
         }catch(Exception e){
             UserAlert userAlert = new UserAlert("ERRO - Erro ao carregar Fonte"); 
         }
+
+        buttonClean.addActionListener(      event -> setVideoChange(null));
+        buttonGaussian.addActionListener(   event -> setVideoChange("gaussian", Integer.toString(sliderGaussian.getValue())));
+        buttonBrightness.addActionListener( event -> setVideoChange("brightness", fieldBrightness.getText()));
+        buttonContrast.addActionListener(   event -> setVideoChange("contrast", fieldContrast.getText()));
+        buttonSobel.addActionListener(      event -> setVideoChange("sobel"));
+        buttonCanny.addActionListener(      event -> setVideoChange("canny"));
+        buttonGray.addActionListener(       event -> setVideoChange("gray"));
+        buttonNegative.addActionListener(   event -> setVideoChange("negative"));
+        buttonResize.addActionListener(     event -> setVideoChange("resize"));
+        buttonFlipV.addActionListener(      event -> setVideoChange("flipV"));
+        buttonFlipH.addActionListener(      event -> setVideoChange("flipH"));
 
         //---------------------------------------------------------
 
@@ -173,6 +210,35 @@ public class HomeScreenContent extends JPanel{
         buttonGray.setFocusable(false);
         buttonGray.setForeground(Color.WHITE);
 
+        buttonNegative.setBounds(20, 570, 345, 40);
+        buttonNegative.setBackground(new Color(120, 90,148));
+        buttonNegative.setBorder(new LineBorder(new Color(0, 0, 0),0));
+        buttonNegative.setFocusable(false);
+        buttonNegative.setForeground(Color.WHITE);
+
+        buttonResize.setBounds(20, 630, 345, 40);
+        buttonResize.setBackground(new Color(120, 90,148));
+        buttonResize.setBorder(new LineBorder(new Color(0, 0, 0),0));
+        buttonResize.setFocusable(false);
+        buttonResize.setForeground(Color.WHITE);
+
+        buttonFlipV.setBounds(20, 690, 345, 40);
+        buttonFlipV.setBackground(new Color(120, 90,148));
+        buttonFlipV.setBorder(new LineBorder(new Color(0, 0, 0),0));
+        buttonFlipV.setFocusable(false);
+        buttonFlipV.setForeground(Color.WHITE);
+
+        buttonFlipH.setBounds(20, 750, 345, 40);
+        buttonFlipH.setBackground(new Color(120, 90,148));
+        buttonFlipH.setBorder(new LineBorder(new Color(0, 0, 0),0));
+        buttonFlipH.setFocusable(false);
+        buttonFlipH.setForeground(Color.WHITE);
+
+        //---------------------------------------------------------
+
+        labelFileSelector.setBounds(20, 790, 1000, 50);
+        labelFileSelector.setForeground(Color.white);
+        fileSelector.setBounds(20, 835, 545, 40);
     }
 
     private void addComponents(){
@@ -195,11 +261,20 @@ public class HomeScreenContent extends JPanel{
         add(buttonCanny);
 
         add(buttonGray);
+
+        add(buttonNegative);
+
+        add(buttonResize);
+
+        add(buttonFlipV);
+        add(buttonFlipH);
+
+        add(labelFileSelector);
+        add(fileSelector);
     }
 
     private void eventActionSelected(String evento){
         setVideoChange(evento);
-        System.out.println(evento);
     }
 
     public JLabel getImageIcon() {
@@ -291,11 +366,90 @@ public class HomeScreenContent extends JPanel{
     }
 
 
+    public JButton getButtonNegative() {
+        return buttonNegative;
+    }
+    public void setButtonNegative(JButton buttonNegative) {
+        this.buttonNegative = buttonNegative;
+    }
+
+
+    public JButton getButtonResize() {
+        return buttonResize;
+    }
+    public void setButtonResize(JButton buttonResize) {
+        this.buttonResize = buttonResize;
+    }
+
+
+    public JButton getButtonFlipV() {
+        return buttonFlipV;
+    }
+    public void setButtonFlipV(JButton buttonFlipV) {
+        this.buttonFlipV = buttonFlipV;
+    }
+
+    public JButton getButtonFlipH() {
+        return buttonFlipH;
+    }
+    public void setButtonFlipH(JButton buttonFlipH) {
+        this.buttonFlipH = buttonFlipH;
+    }
+
+
+    public boolean getFlipedV() {
+        return flipedV;
+    }
+    public void setFlipedV(boolean flipedV) {
+        this.flipedV = flipedV;
+    }
+
+    public boolean getFlipedH() {
+        return flipedH;
+    }
+    public void setFlipedH(boolean flipedH) {
+        this.flipedH = flipedH;
+    }
+
+
     public String getVideoChange() {
         return videoChange;
     }
     public void setVideoChange(String videoChange) {
-        this.videoChange = videoChange;
+        if(videoChange == null){
+            this.videoChange = "";    
+        }else if(this.videoChange == null || this.videoChange.equals("")){
+            this.videoChange = videoChange;
+        }else{
+            this.videoChange = this.videoChange + ";" + videoChange;
+        }
+        System.out.println(this.videoChange);
     }
-   
+    public void setVideoChange(String videoChange, String value) {
+        if(videoChange == null){
+            this.videoChange = "";    
+        }else if(this.videoChange == null){
+            this.videoChange = videoChange;
+        }else{
+            this.videoChange = this.videoChange + ";" + videoChange + ":" + value;
+        }
+        System.out.println(this.videoChange);
+    }
+
+
+    public JLabel getLabelFileSelector() {
+        return labelFileSelector;
+    }
+    public void setLabelFileSelector(JLabel labelFileSelector) {
+        this.labelFileSelector = labelFileSelector;
+    }
+
+
+
+    public FileSelector getFileSelector() {
+        return fileSelector;
+    }
+    public void setFileSelector(FileSelector fileSelector) {
+        this.fileSelector = fileSelector;
+    }
 }

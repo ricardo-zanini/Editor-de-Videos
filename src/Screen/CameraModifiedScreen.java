@@ -4,8 +4,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
+import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
@@ -18,7 +20,7 @@ public class CameraModifiedScreen extends Screen{
     private JLabel cameraLabel;
 
     public CameraModifiedScreen(int posX, int posY){
-        super("Tela de Câmera", 640, 480);
+        super("Tela de Câmera", 640 + 13, 480 + 35);
 
         setLocation(posX, posY);
         setLayout(null);
@@ -52,69 +54,137 @@ public class CameraModifiedScreen extends Screen{
     }
 
     public void refreshImage(Mat frame, HomeScreen homeScreen){
-        String actionPerformed = homeScreen.getHomeScreenContent().getVideoChange();
-        if(actionPerformed != null){
-            if(actionPerformed.equals("")){
 
-            }else if(actionPerformed.equals("gaussian")){
-                int gaussian_size = homeScreen.getHomeScreenContent().getSliderGaussian().getValue();
-                if(gaussian_size % 2 == 0){
-                    gaussian_size--;
-                }
-                Imgproc.GaussianBlur(frame, frame, new Size(gaussian_size, gaussian_size), 0);
-            }else if(actionPerformed == "brightness"){
-                String bright =  homeScreen.getHomeScreenContent().getFieldBrightness().getText();
-
-                int bright_int = 0;
-                try{
-                    bright_int = Integer.parseInt(bright);
-                }catch(Exception e){
-                    bright_int = 0;
+        String actions = homeScreen.getHomeScreenContent().getVideoChange();
+        if(actions != null){
+            String[] listOfActions = actions.split(";");
+            for(int i = 0; i < listOfActions.length; i++){
+                
+                String actionPerformed = listOfActions[i].split(":")[0];
+                String valueAction;
+                if(listOfActions[i].split(":").length > 1){
+                    valueAction = listOfActions[i].split(":")[1];
+                }else{
+                    valueAction = "";
                 }
 
-                frame.convertTo(frame, 0,1,bright_int);
-            }else if(actionPerformed == "contrast"){
-                String contrast =  homeScreen.getHomeScreenContent().getFieldContrast().getText();
+                //======================================== CLEAN ===============================================
+                if(actionPerformed.equals("")){
+                    homeScreen.getHomeScreenContent().setFlipedV(false);
+                    homeScreen.getHomeScreenContent().setFlipedH(false);
 
-                int contrast_int = 1;
-                try{
-                    contrast_int = Integer.parseInt(contrast);
-                }catch(Exception e){
-                    contrast_int = 1;
+                //==================================== GAUSSIAN ===============================================
+                }else if(actionPerformed.equals("gaussian")){
+                    int gaussian_size;
+                    try{
+                        gaussian_size = Integer.parseInt(valueAction);
+                    }catch(Exception e){
+                        gaussian_size = 1;
+                    }
+                    
+                    if(gaussian_size % 2 == 0){
+                        gaussian_size--;
+                    }
+                    Imgproc.GaussianBlur(frame, frame, new Size(gaussian_size, gaussian_size), 0);
+
+                //==================================== BRILHO ===============================================
+                }else if(actionPerformed.equals("brightness")){
+                    String bright = valueAction;
+
+                    int bright_int = 0;
+                    try{
+                        bright_int = Integer.parseInt(bright);
+                    }catch(Exception e){
+                        bright_int = 0;
+                    }
+
+                    frame.convertTo(frame, 0,1,bright_int);
+
+                //==================================== CONTRASTE ===============================================
+                }else if(actionPerformed.equals("contrast")){
+                    String contrast = valueAction;
+
+                    int contrast_int = 1;
+                    try{
+                        contrast_int = Integer.parseInt(contrast);
+                    }catch(Exception e){
+                        contrast_int = 1;
+                    }
+
+                    frame.convertTo(frame, 0, contrast_int, 0);
+                
+                //==================================== SOBEL ===============================================
+                }else if(actionPerformed.equals("sobel")){
+                    if(frame.channels() != 1){
+                        Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGB2GRAY);
+                    }
+                    Imgproc.Sobel(frame, frame, -1, 0, 1);
+                    frame.convertTo(frame, 0, 1, 127);
+
+                //==================================== CANNY ===============================================
+                }else if(actionPerformed.equals("canny")){
+                    Mat src_img = frame;
+
+                    // Matrizes auxiliares
+                    Mat gray_img = new Mat(src_img.rows(), src_img.cols(), src_img.type());
+                    Mat edges_img = new Mat(src_img.rows(), src_img.cols(), src_img.type());
+                    Mat dst_img = new Mat(src_img.rows(), src_img.cols(), src_img.type(), new Scalar(0));
+
+                    // Conversao para cinza
+                    if(frame.channels() != 1){
+                        Imgproc.cvtColor(src_img, gray_img, Imgproc.COLOR_RGB2GRAY);
+                    }
+
+                    // borramento para elhor resultado (detecta menos ruido como borda)
+                    Imgproc.blur(gray_img, edges_img, new Size(3, 3));
+
+                    // Deteção das bordas
+                    Imgproc.Canny(edges_img, edges_img, 40, 40*3);
+
+                    // Copia do resultado
+                    src_img.copyTo(dst_img, edges_img); 
+                    frame = dst_img;
+
+                //==================================== CINZA ===============================================
+                }else if(actionPerformed.equals("gray")){
+                    if(frame.channels() != 1){
+                        Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGB2GRAY);
+                    }
+
+                //==================================== NEGATIVE ============================================
+                }else if(actionPerformed.equals("negative")){
+                    Core.bitwise_not(frame,frame);
+
+                //==================================== RESIZE ===============================================
+                }else if(actionPerformed.equals("resize")){
+                    int newWidth = Math.abs(frame.width() / 2);
+                    int newHeight = Math.abs(frame.height() / 2);
+
+                    Imgproc.resize(frame, frame, new Size(newWidth, newHeight));
+
+                //================================= FLIP VERTICAL ===========================================
+                }else if(actionPerformed.equals("flipV")){
+                    Core.flip(frame, frame, 0);
+                    homeScreen.getHomeScreenContent().setFlipedV(true);
+
+                //================================= FLIP HORIZONTAL ===========================================
+                }else if(actionPerformed.equals("flipH")){
+                    Core.flip(frame, frame, 1);
+                    homeScreen.getHomeScreenContent().setFlipedH(true);
+                //================================= ROTAÇÃO ===========================================
+                }else if(actionPerformed.equals("rotation")){
+                    Imgproc.getRotationMatrix2D(new Point(Math.abs(frame.width() / 2), Math.abs(frame.height() / 2)), 90, 1);
                 }
-
-                frame.convertTo(frame, 0, contrast_int, 0);
-            }else if(actionPerformed == "sobel"){
-                Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGB2GRAY);
-                Imgproc.Sobel(frame, frame, -1, 0, 1);
-            }else if(actionPerformed == "canny"){
-                Mat src_img = frame;
-
-                // Matrizes auxiliares
-                Mat gray_img = new Mat(src_img.rows(), src_img.cols(), src_img.type());
-                Mat edges_img = new Mat(src_img.rows(), src_img.cols(), src_img.type());
-                Mat dst_img = new Mat(src_img.rows(), src_img.cols(), src_img.type(), new Scalar(0));
-
-                // Conversao para cinza
-                Imgproc.cvtColor(src_img, gray_img, Imgproc.COLOR_RGB2GRAY);
-
-                // borramento para elhor resultado (detecta menos ruido como borda)
-                Imgproc.blur(gray_img, edges_img, new Size(3, 3));
-
-                // Deteção das bordas
-                Imgproc.Canny(edges_img, edges_img, 40, 40*3);
-
-                // Copia do resultado
-                src_img.copyTo(dst_img, edges_img); 
-                frame = dst_img;
-            }else if(actionPerformed == "gray"){
-                Imgproc.cvtColor(frame, frame, Imgproc.COLOR_RGB2GRAY);
             }
+
         }
         byte[] imgData;
         final MatOfByte buf = new MatOfByte(); 
         Imgcodecs.imencode(".jpg", frame, buf); 
         imgData = buf.toArray(); 
+
+        setSize(frame.width() + 13, frame.height() + 35);
+        cameraLabel.setBounds(0, 0, frame.width(), frame.height()); 
 
         getCameraLabel().setIcon(new ImageIcon(imgData)); 
     }
