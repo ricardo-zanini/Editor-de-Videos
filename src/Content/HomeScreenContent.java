@@ -5,9 +5,16 @@ import Input.*;
 import Util.*;
 import java.awt.*;
 import java.io.File;
+import java.util.ArrayList;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import org.opencv.core.Mat;
+import org.opencv.core.Size;
+import org.opencv.videoio.VideoCapture;
+import org.opencv.videoio.VideoWriter;
+import org.opencv.videoio.Videoio;
 
 public class HomeScreenContent extends JPanel{
 
@@ -40,11 +47,22 @@ public class HomeScreenContent extends JPanel{
     private JButton         buttonFlipH;
     private boolean         flipedH;
 
+    private JLabel          labelFileSelector;
+    private FileSelector    fileSelector;
 
-    private JLabel                  labelFileSelector;
-    private FileSelector      fileSelector;
+    private JTextField      fieldRotation;
+    private JButton         buttonRotation;
+
+    private JButton         buttonResume;
+    private JButton         buttonPause;
+
+    private Boolean         recordStatus;
 
     private String          videoChange;
+
+    private VideoWriter     videoWriter;
+
+    private VideoCapture    cap;
 
     public HomeScreenContent(int width, int height){
 
@@ -56,6 +74,8 @@ public class HomeScreenContent extends JPanel{
         configComponents();
         addComponents();
 
+        setRecordStatus(false);
+        buttonPause.setBorder(new LineBorder(new Color(133, 36, 63),8));
     }
 
     private void createComponents(){
@@ -86,9 +106,15 @@ public class HomeScreenContent extends JPanel{
         setButtonFlipV(new JButton("ESPELHAMENTO VERTICAL"));
         setButtonFlipH(new JButton("ESPELHAMENTO HORIZONTAL"));
 
+        setFieldRotation(new JTextField(""));
+        setButtonRotation(new JButton("ROTAÇÃO"));
+
 
         setLabelFileSelector(new JLabel("- SALVAR VIDEO -"));
-        setFileSelector(new FileSelector(205, new FileNameExtensionFilter("Vídeos", "avi"), "SALVAR"));   
+        setFileSelector(new FileSelector(205, new FileNameExtensionFilter("MP4 Files", "mp4")));   
+
+        setButtonResume(new JButton("PLAY"));
+        setButtonPause(new JButton("PAUSE"));
     }
 
     private void configComponents(){
@@ -120,7 +146,14 @@ public class HomeScreenContent extends JPanel{
             buttonFlipV.setFont(font.deriveFont(16f));
             buttonFlipH.setFont(font.deriveFont(16f));
 
+            fieldRotation.setFont(font.deriveFont(16f));
+            buttonRotation.setFont(font.deriveFont(16f));
+
             labelFileSelector.setFont(font.deriveFont(16f));
+
+            buttonResume.setFont(font.deriveFont(16f));
+
+            buttonPause.setFont(font.deriveFont(16f));
 
         }catch(Exception e){
             UserAlert userAlert = new UserAlert("ERRO - Erro ao carregar Fonte"); 
@@ -137,6 +170,10 @@ public class HomeScreenContent extends JPanel{
         buttonResize.addActionListener(     event -> setVideoChange("resize"));
         buttonFlipV.addActionListener(      event -> setVideoChange("flipV"));
         buttonFlipH.addActionListener(      event -> setVideoChange("flipH"));
+        buttonRotation.addActionListener(   event -> setVideoChange("rotation", fieldRotation.getText()));
+        buttonResume.addActionListener(     event -> resumeRecord());
+        buttonPause.addActionListener(     event -> pauseRecord());
+
 
         //---------------------------------------------------------
 
@@ -198,11 +235,15 @@ public class HomeScreenContent extends JPanel{
         buttonSobel.setFocusable(false);
         buttonSobel.setForeground(Color.WHITE);
 
+        //---------------------------------------------------------
+
         buttonCanny.setBounds(20, 450, 345, 40);
         buttonCanny.setBackground(new Color(120, 90,148));
         buttonCanny.setBorder(new LineBorder(new Color(0, 0, 0),0));
         buttonCanny.setFocusable(false);
         buttonCanny.setForeground(Color.WHITE);
+
+        //---------------------------------------------------------
 
         buttonGray.setBounds(20, 510, 345, 40);
         buttonGray.setBackground(new Color(120, 90,148));
@@ -210,11 +251,15 @@ public class HomeScreenContent extends JPanel{
         buttonGray.setFocusable(false);
         buttonGray.setForeground(Color.WHITE);
 
+        //---------------------------------------------------------
+
         buttonNegative.setBounds(20, 570, 345, 40);
         buttonNegative.setBackground(new Color(120, 90,148));
         buttonNegative.setBorder(new LineBorder(new Color(0, 0, 0),0));
         buttonNegative.setFocusable(false);
         buttonNegative.setForeground(Color.WHITE);
+
+        //---------------------------------------------------------
 
         buttonResize.setBounds(20, 630, 345, 40);
         buttonResize.setBackground(new Color(120, 90,148));
@@ -222,11 +267,15 @@ public class HomeScreenContent extends JPanel{
         buttonResize.setFocusable(false);
         buttonResize.setForeground(Color.WHITE);
 
+        //---------------------------------------------------------
+
         buttonFlipV.setBounds(20, 690, 345, 40);
         buttonFlipV.setBackground(new Color(120, 90,148));
         buttonFlipV.setBorder(new LineBorder(new Color(0, 0, 0),0));
         buttonFlipV.setFocusable(false);
         buttonFlipV.setForeground(Color.WHITE);
+
+        //---------------------------------------------------------
 
         buttonFlipH.setBounds(20, 750, 345, 40);
         buttonFlipH.setBackground(new Color(120, 90,148));
@@ -236,9 +285,37 @@ public class HomeScreenContent extends JPanel{
 
         //---------------------------------------------------------
 
-        labelFileSelector.setBounds(20, 790, 1000, 50);
+        fieldRotation.setBounds(20, 810, 172, 40);
+        fieldRotation.setBackground(new Color(33, 33, 33));
+        fieldRotation.setBorder(new LineBorder(new Color(33, 33, 33),10));
+        fieldRotation.setForeground(new Color(204, 204, 204));
+
+        buttonRotation.setBounds(192, 810, 173, 40);
+        buttonRotation.setBackground(new Color(120, 90,148));
+        buttonRotation.setBorder(new LineBorder(new Color(0, 0, 0),0));
+        buttonRotation.setFocusable(false);
+        buttonRotation.setForeground(Color.WHITE);
+
+        //---------------------------------------------------------
+
+        labelFileSelector.setBounds(20, 850, 1000, 50);
         labelFileSelector.setForeground(Color.white);
-        fileSelector.setBounds(20, 835, 545, 40);
+        fileSelector.setBounds(20, 895, 545, 40);
+
+        //---------------------------------------------------------
+
+        buttonResume.setBounds(192, 955, 172, 40);
+        buttonResume.setBackground(new Color(86, 179, 118));
+        buttonResume.setBorder(new LineBorder(new Color(0, 0, 0),0));
+        buttonResume.setFocusable(false);
+        buttonResume.setForeground(Color.WHITE);
+
+        buttonPause.setBounds(20, 955, 173, 40);
+        buttonPause.setBackground(new Color(175, 62, 94));
+        buttonPause.setBorder(new LineBorder(new Color(0, 0, 0),0));
+        buttonPause.setFocusable(false);
+        buttonPause.setForeground(Color.WHITE);
+
     }
 
     private void addComponents(){
@@ -269,8 +346,49 @@ public class HomeScreenContent extends JPanel{
         add(buttonFlipV);
         add(buttonFlipH);
 
+        add(fieldRotation);
+        add(buttonRotation);
+
         add(labelFileSelector);
         add(fileSelector);
+
+        add(buttonResume);
+
+        add(buttonPause);
+    }
+
+    private void resumeRecord(){
+
+        String filePath = getFileSelector().getFieldFile().getText();
+
+        if(filePath.equals("")){
+            UserAlert userAlert = new UserAlert("ERRO - Você não selecionou um destino de salvamento"); 
+        }else{
+            if(filePath.substring(filePath.length() - 3).equals("mp4")){
+                buttonResume.setBorder(new LineBorder(new Color(59, 140, 87),8));
+                buttonPause.setBorder(new LineBorder(new Color(133, 36, 63),0));
+                setVideoWriter(
+                    new VideoWriter(filePath, VideoWriter.fourcc('m', 'p', '4', 'v'), 30,
+                    new Size(getCap().get(Videoio.CAP_PROP_FRAME_WIDTH), getCap().get(Videoio.CAP_PROP_FRAME_HEIGHT))));
+                setRecordStatus(true);
+            }else{
+                UserAlert userAlert = new UserAlert("ERRO - Você não selecionou um arquivo MP4"); 
+            }
+
+        }
+    }
+    private void pauseRecord(){
+        String filePath = getFileSelector().getFieldFile().getText();
+
+        if(filePath.equals("")){
+            UserAlert userAlert = new UserAlert("ERRO - Você não selecionou um destino de salvamento"); 
+        }else{
+            videoWriter.release();
+            UserAlert userAlert = new UserAlert("Vídeo Salvo com Sucesso!"); 
+            buttonResume.setBorder(new LineBorder(new Color(59, 140, 87),0));
+            buttonPause.setBorder(new LineBorder(new Color(133, 36, 63),8));
+            setRecordStatus(false);
+        }
     }
 
     private void eventActionSelected(String evento){
@@ -429,7 +547,7 @@ public class HomeScreenContent extends JPanel{
         if(videoChange == null){
             this.videoChange = "";    
         }else if(this.videoChange == null){
-            this.videoChange = videoChange;
+            this.videoChange = videoChange + ":" + value;
         }else{
             this.videoChange = this.videoChange + ";" + videoChange + ":" + value;
         }
@@ -445,6 +563,22 @@ public class HomeScreenContent extends JPanel{
     }
 
 
+    public JTextField getFieldRotation() {
+        return fieldRotation;
+    }
+    public void setFieldRotation(JTextField fieldRotation) {
+        this.fieldRotation = fieldRotation;
+    }
+
+
+    public JButton getButtonRotation() {
+        return buttonRotation;
+    }
+    public void setButtonRotation(JButton buttonRotation) {
+        this.buttonRotation = buttonRotation;
+    }
+
+
 
     public FileSelector getFileSelector() {
         return fileSelector;
@@ -452,4 +586,42 @@ public class HomeScreenContent extends JPanel{
     public void setFileSelector(FileSelector fileSelector) {
         this.fileSelector = fileSelector;
     }
+
+
+    public JButton getButtonResume() {
+        return buttonResume;
+    }
+    public void setButtonResume(JButton buttonResume) {
+        this.buttonResume = buttonResume;
+    }
+
+    public JButton getButtonPause() {
+        return buttonPause;
+    }
+    public void setButtonPause(JButton buttonPause) {
+        this.buttonPause = buttonPause;
+    }
+
+    public Boolean getRecordStatus() {
+        return recordStatus;
+    }
+    public void setRecordStatus(Boolean recordStatus) {
+        this.recordStatus = recordStatus;
+    }
+
+
+    public VideoCapture getCap() {
+        return cap;
+    }
+    public void setCap(VideoCapture cap) {
+        this.cap = cap;
+    }
+
+    public VideoWriter getVideoWriter() {
+        return videoWriter;
+    }
+    public void setVideoWriter(VideoWriter videoWriter) {
+        this.videoWriter = videoWriter;
+    }
+
 }

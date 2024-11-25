@@ -3,6 +3,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
 import org.opencv.core.Core;
+import org.opencv.core.Size;
+import org.opencv.videoio.VideoWriter;
+import org.opencv.videoio.Videoio;
 
 import Alert.UserAlert;
 import Screen.CameraScreen;
@@ -12,7 +15,7 @@ import java.awt.Window;
 public class Index {
    
     public static void main(String[] args){
-      try{
+      // try{
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
         HomeScreen homeScreen;
@@ -23,11 +26,11 @@ public class Index {
 
         // Adição da Câmera
         cameraScreen = new CameraScreen(440, 20, homeScreen);
-
-        cameraScreen.startCamera();
-      }catch(Exception e){
-        UserAlert userAlert = new UserAlert("ERRO - Erro ao criar tela inicial"); 
-      }
+        
+        cameraScreen.startCamera(homeScreen);
+      // }catch(Exception e){
+      //   UserAlert userAlert = new UserAlert("ERRO - Erro ao criar tela inicial"); 
+      // }
     }
 
 }

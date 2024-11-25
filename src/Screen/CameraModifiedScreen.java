@@ -14,13 +14,14 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import Alert.UserAlert;
+import java.util.ArrayList;
 
 public class CameraModifiedScreen extends Screen{
 
     private JLabel cameraLabel;
 
     public CameraModifiedScreen(int posX, int posY){
-        super("Tela de Câmera", 640 + 13, 480 + 35);
+        super("Tela de Câmera Modificada", 640 + 13, 480 + 35);
 
         setLocation(posX, posY);
         setLayout(null);
@@ -53,7 +54,7 @@ public class CameraModifiedScreen extends Screen{
         this.cameraLabel = cameraLabel;
     }
 
-    public void refreshImage(Mat frame, HomeScreen homeScreen){
+    public Mat refreshImage(Mat frame, HomeScreen homeScreen){
 
         String actions = homeScreen.getHomeScreenContent().getVideoChange();
         if(actions != null){
@@ -139,7 +140,7 @@ public class CameraModifiedScreen extends Screen{
                     Imgproc.blur(gray_img, edges_img, new Size(3, 3));
 
                     // Deteção das bordas
-                    Imgproc.Canny(edges_img, edges_img, 40, 40*3);
+                    Imgproc.Canny(edges_img, edges_img, 60, 60*3);
 
                     // Copia do resultado
                     src_img.copyTo(dst_img, edges_img); 
@@ -153,7 +154,7 @@ public class CameraModifiedScreen extends Screen{
 
                 //==================================== NEGATIVE ============================================
                 }else if(actionPerformed.equals("negative")){
-                    Core.bitwise_not(frame,frame);
+                    frame.convertTo(frame, 0, -1, 255);
 
                 //==================================== RESIZE ===============================================
                 }else if(actionPerformed.equals("resize")){
@@ -173,19 +174,32 @@ public class CameraModifiedScreen extends Screen{
                     homeScreen.getHomeScreenContent().setFlipedH(true);
                 //================================= ROTAÇÃO ===========================================
                 }else if(actionPerformed.equals("rotation")){
-                    Imgproc.getRotationMatrix2D(new Point(Math.abs(frame.width() / 2), Math.abs(frame.height() / 2)), 90, 1);
+                    String rotation_angle = valueAction;
+
+                    int rotation_angle_int = 0;
+                    try{
+                        rotation_angle_int = Integer.parseInt(rotation_angle);
+                    }catch(Exception e){
+                        rotation_angle_int = 0;
+                    }
+
+                    Point center = new Point(frame.width() / 2.0, frame.height() / 2.0);
+                    Mat rotationMatrix = Imgproc.getRotationMatrix2D(center, rotation_angle_int, 1.0);
+                    Size size = new Size(frame.width(), frame.height());
+
+                    Imgproc.warpAffine(frame, frame, rotationMatrix, size, Imgproc.INTER_LINEAR, Core.BORDER_CONSTANT);
                 }
             }
 
         }
-        byte[] imgData;
-        final MatOfByte buf = new MatOfByte(); 
-        Imgcodecs.imencode(".jpg", frame, buf); 
-        imgData = buf.toArray(); 
 
-        setSize(frame.width() + 13, frame.height() + 35);
-        cameraLabel.setBounds(0, 0, frame.width(), frame.height()); 
-
-        getCameraLabel().setIcon(new ImageIcon(imgData)); 
+        if(frame.channels() == 1){
+            Imgproc.cvtColor(frame, frame, Imgproc.COLOR_GRAY2RGB);
+        }
+        return frame;
+        
     }
+
+
+
 }
